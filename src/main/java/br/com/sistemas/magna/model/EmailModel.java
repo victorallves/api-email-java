@@ -1,10 +1,8 @@
 package br.com.sistemas.magna.model;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.Properties;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.activation.DataHandler;
 import javax.activation.DataSource;
@@ -20,55 +18,17 @@ import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeBodyPart;
 import javax.mail.internet.MimeMessage;
 import javax.mail.internet.MimeMultipart;
-import javax.servlet.ServletException;
-import javax.servlet.annotation.MultipartConfig;
-import javax.servlet.annotation.WebServlet;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.Part;
-import java.nio.file.StandardCopyOption;
 
-@WebServlet("/enviar-email")
-@MultipartConfig
-public class EmailServlet extends HttpServlet {
+public class EmailModel {
+    private static final Logger LOGGER = Logger.getLogger(EmailModel.class.getName());
 
-    private static final long serialVersionUID = 1L;
-
-    @Override
-    protected void doPost(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
-        // Parâmetros do formulário
-        String destinatario = request.getParameter("destinatario");
-        String assunto = request.getParameter("assunto");
-        String mensagem = request.getParameter("mensagem");
-
-        // Parte do anexo
-        Part arquivoPart = request.getPart("arquivoAnexo");
-        String nomeArquivo = getSubmittedFileName(arquivoPart);
-
-        if (nomeArquivo != null && !nomeArquivo.isEmpty()) {
-            // Diretório temporário para salvar o arquivo
-            String diretorioTemp = System.getProperty("java.io.tmpdir");
-            String caminhoAnexo = diretorioTemp + "/" + nomeArquivo;
-
-            // Salvar o arquivo no diretório temporário
-            try (InputStream input = arquivoPart.getInputStream()) {
-                Files.copy(input, Paths.get(caminhoAnexo), StandardCopyOption.REPLACE_EXISTING);
-            }
-
-            // Lógica de envio de email com anexo
-            enviarEmail(destinatario, assunto, mensagem, caminhoAnexo);
-
-            // Redirecionamento após o envio
-            response.sendRedirect(request.getContextPath() + "/index.jsp");
-        } else {
-            System.out.println("Nome de arquivo inválido");
-            response.sendRedirect(request.getContextPath() + "/index.jsp");
-        }
+    // Construtor privado 
+    private EmailModel() {
+        throw new AssertionError("A classe EmailModel não deve ser instanciada.");
     }
 
-    private void enviarEmail(String destinatario, String assunto, String mensagem, String caminhoAnexo) {
+    public static void enviarEmail(String destinatario, String assunto, String mensagem, String caminhoAnexo) {
         String remetente = "viaugustoadr@gmail.com";
         String senha = "ailmhtxtzugafqou";
 
@@ -79,6 +39,7 @@ public class EmailServlet extends HttpServlet {
         props.put("mail.smtp.port", "587"); // Pode variar de acordo com o provedor
 
         Session session = Session.getInstance(props, new Authenticator() {
+            @Override
             protected PasswordAuthentication getPasswordAuthentication() {
                 return new PasswordAuthentication(remetente, senha);
             }
@@ -111,14 +72,14 @@ public class EmailServlet extends HttpServlet {
             // Enviando a mensagem
             Transport.send(message);
 
-            System.out.println("E-mail enviado com sucesso!");
+            LOGGER.info("E-mail enviado com sucesso!");
 
         } catch (MessagingException e) {
-            System.out.println("Erro ao enviar o e-mail: " + e.getMessage());
+            LOGGER.log(Level.SEVERE, "Erro ao enviar o e-mail", e);
         }
     }
 
-    private String getSubmittedFileName(Part part) {
+    public static String getSubmittedFileName(Part part) {
         for (String content : part.getHeader("content-disposition").split(";")) {
             if (content.trim().startsWith("filename")) {
                 return content.substring(content.indexOf('=') + 1).trim().replace("\"", "");
