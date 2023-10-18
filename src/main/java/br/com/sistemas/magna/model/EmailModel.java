@@ -29,8 +29,8 @@ public class EmailModel {
     }
 
     public static void enviarEmail(String destinatario, String assunto, String mensagem, String caminhoAnexo) {
-        String remetente = "viaugustoadr@gmail.com";
-        String senha = "ailmhtxtzugafqou";
+        String remetente = "";
+        String senha = "";
 
         Properties props = new Properties();
         props.put("mail.smtp.auth", "true");
